@@ -26,7 +26,6 @@
   loop:
     - "{{ lookup('template', 'k8s-manifests/010-ingress.yml') | from_yaml_all | list }}"
     - "{{ lookup('template', 'k8s-manifests/015-configMap.yaml') | from_yaml_all | list }}"
-    - "{{ lookup('template', 'k8s-manifests/015-loadbalancer.yaml') | from_yaml_all | list }}"
     - "{{ lookup('template', 'k8s-manifests/020-svc-nginx.yaml') | from_yaml_all | list }}"
     - "{{ lookup('template', 'k8s-manifests/030-deployment-app.yaml') | from_yaml_all | list }}"
 
