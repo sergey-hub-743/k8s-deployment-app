@@ -1,0 +1,26 @@
+---
+
+
+- hosts: localhost
+  gather_facts: no
+  roles:
+      - role: 'roles/eks-deploy'
+        vars:
+          aws_environment: true
+          aws_region: us-east-1
+          aws_profile: default
+          stack_outputs: {}
+          eks_cluster_name: eks-myapp
+          eks_kubernetes_version: "1.16"
+          eks_nodegroup_name: eks-myapp-nodegroup
+          eks_nodegroup_instance_type: t3.medium
+          eks_nodegroup_cluster_size: 3
+          k8s_kubeconfig: ~/.kube/eks-myapp
+          k8s_no_log: true
+      - role: 'roles/k8s-deploy'
+        vars:
+          k8s_myapp_sg: sg-myapp
+          k8s_myapp_subnet: subnet-myapp
+
+
+

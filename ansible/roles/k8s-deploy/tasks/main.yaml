@@ -1,0 +1,56 @@
+---
+
+- elb_application_lb:
+    name: elb_application_lb
+    security_groups:
+      - {{ k8s_myapp_sg }}
+    subnets:
+      - {{ k8s_myapp_subnet }}
+    listeners:
+      - Protocol: HTTP 
+        Port: 80 
+        SslPolicy: ELBSecurityPolicy-2015-05
+        Certificates: 
+          - CertificateArn: arn:aws:iam::12345678987:server-certificate/test.domain.com
+        DefaultActions:
+          - Type: forward
+            TargetGroupName:
+    state: present
+
+
+- name: Deploy configmap
+  k8s:
+    definition: '{{ item }}'
+    kubeconfig: '{{ k8s_kubeconfig }}'
+    state: present
+  loop:
+    - "{{ lookup('template', 'k8s-manifests/010-ingress.yml') | from_yaml_all | list }}"
+    - "{{ lookup('template', 'k8s-manifests/015-configMap.yaml') | from_yaml_all | list }}"
+    - "{{ lookup('template', 'k8s-manifests/015-loadbalancer.yaml') | from_yaml_all | list }}"
+    - "{{ lookup('template', 'k8s-manifests/020-svc-nginx.yaml') | from_yaml_all | list }}"
+    - "{{ lookup('template', 'k8s-manifests/030-deployment-app.yaml') | from_yaml_all | list }}"
+
+
+- name: Get load balancer DNS name.
+  k8s_info:
+    kubeconfig: '{{ k8s_kubeconfig }}'
+    kind: Service
+    name: elb_application_lb
+    namespace: default
+  register: myapp_svc
+
+- name: Set the load balancer URL as a fact.
+  set_fact:
+    elb_application_lb_host: "{{ myapp_svc['resources'][0]['status']['loadBalancer']['ingress'][0]['hostname'] }}"
+  when: aws_environment | bool
+
+- name: Wait for Load Balancer to respond.
+  uri:
+    url: "http://{{ elb_application_lb_host }}"
+  register: lb_result
+  until: lb_result.status == 200
+  retries: 60
+  delay: 5
+  when: aws_environment | bool
+
+
